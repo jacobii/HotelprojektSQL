@@ -6,10 +6,6 @@ public class Food implements Serializable {
     private String typeOfFood;
     private int price;
     private int quantity;
-     //   case 1 -> price = quantity * 50;
-            //case 2 -> price = quantity * 60;
-           // case 3 -> price = quantity * 70;
-           // case 4 -> price = quantity * 30;
 
 
     public Food(String name, int price, int quantity) {
@@ -51,8 +47,6 @@ public class Food implements Serializable {
                 ", quantity=" + quantity +
                 '}';
     }
-
-
 
 
 }

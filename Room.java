@@ -5,12 +5,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 
-public class Room implements java.io.Serializable{
-private boolean booked;
-private String typeOfRoom;
-private int price;
-private int roomNumber;
-
+public class Room implements java.io.Serializable {
+    private boolean booked;
+    private String typeOfRoom;
+    private int price;
+    private int roomNumber;
 
 
     public Room(int roomNumber, String typeOfRoom, boolean booked, int price) {
@@ -38,11 +37,10 @@ private int roomNumber;
     }
 
     public boolean isBooked() {
-        if(booked) {
+        if (booked) {
             System.out.println("this room is booked");
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }

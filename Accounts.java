@@ -6,9 +6,6 @@ import java.util.ArrayList;
 public class Accounts implements Serializable {
 
     static ArrayList<Accounts> accounts = new ArrayList<>();
-    static ArrayList<Accounts> getAccounts() {
-        return accounts;
-    }
     private String firstName;
     private String lastName;
     private String userName;
