@@ -67,6 +67,10 @@ select * from reservation;
 INSERT INTO reservation (userName, room_nmbr,amount_days,check_in) VALUES
 ('name1',2,5,CURRENT_timestamp),('name2',5,1,CURRENT_timestamp);
 
+INSERT INTO reservation (userName, room_nmbr,amount_days,check_out) VALUES
+('name1',2,5,CURRENT_timestamp),('name2',5,1,CURRENT_timestamp);
+
+UPDATE reservation SET check_out = CURRENT_timestamp, booked = false WHERE userName='ha' AND booked = true;
 
 CREATE TABLE items(
 item_id int AUTO_INCREMENT NOT NULL,
@@ -83,6 +87,7 @@ CREATE TABLE bought(
 buy_id int AUTO_INCREMENT NOT NULL,
 item_id int not null,
 amount INT NOT NULL default 1, 
+buy_date DATETIME default current_timestamp,
 userName VARCHAR(50) NOT NULL CHECK(userName !=''),
 foreign key (item_id) references items(item_id),
 foreign key (userName) references customer(userName),
@@ -139,19 +144,43 @@ FROM room
 LEFT join roomnumber ON roomnumber.room_type_id = room.room_type_id
 LEFT join reservation ON reservation.room_nmbr = roomnumber.room_nmbr
 LEFT join customer ON customer.userName = reservation.userName
--- WHERE booked IS NOT true;
+WHERE booked IS NOT true
+-- AND booked IS not false
 ORDER BY booked;
 
-Create VIEW customerInfo AS
-SELECT room.room_name, room.price, roomnumber.room_nmbr, reservation.booked, customer.userName, items.item_id, bought.amount, items.item, items.item_price
+drop view checkOut;
+Create VIEW checkIn AS
+SELECT room.room_name, room.price, roomnumber.room_nmbr, reservation.booked, customer.userName
+FROM room
+LEFT join roomnumber ON roomnumber.room_type_id = room.room_type_id
+LEFT join reservation ON reservation.room_nmbr = roomnumber.room_nmbr
+LEFT join customer ON customer.userName = reservation.userName
+WHERE booked IS true
+OR booked IS NOT false;
+
+
+
+
+
+drop view customerInfo;
+drop view customerInfoCheckedIn;
+Create VIEW customerInfoCheckedIn AS
+-- room.room_name, room.price,
+SELECT customer.userName,items.item,  bought.amount, items.item_price, bought.buy_date
 FROM room
 LEFT join roomnumber ON roomnumber.room_type_id = room.room_type_id
 LEFT join reservation ON reservation.room_nmbr = roomnumber.room_nmbr
 LEFT join customer ON customer.userName = reservation.userName
 LEFT JOIN bought ON bought.userName = customer.userName
 LEFT JOIN items on items.item_id = bought.item_id
--- WHERE customer.username = 'he';
+WHERE booked IS true
+
+-- WHERE customer.username = 'ha';
+-- GROUP BY userName;
 -- WHERE booked IS NOT true;
 -- ORDER BY booked;
 
-SELECT * FROM customerInfo;
+
+
+
+SELECT * FROM customerInfo Where userName = 'ha';
