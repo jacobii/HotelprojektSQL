@@ -5,20 +5,33 @@ import java.util.ArrayList;
 
 public class Accounts implements Serializable {
 
-    static ArrayList<Accounts> accounts = new ArrayList<>();
+    static ArrayList<Accounts> account = new ArrayList<>();
+    static ArrayList<Accounts> account() {
+        return account;
+    }
     private String firstName;
     private String lastName;
     private String userName;
     private String password;
+    private int accountType;
 
-    public Accounts(String firstName, String lastName, String userName, String password) {
+
+    public Accounts(String firstName, String lastName, String userName, String password, int accountType) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.userName = userName;
         this.password = password;
+        this.accountType = accountType;
     }
 
 
+    public int getAccountType() {
+        return accountType;
+    }
+
+    public void setAccountType(int accountType) {
+        this.accountType = accountType;
+    }
 
     public String getFirstName() {
         return firstName;

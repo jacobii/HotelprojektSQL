@@ -169,7 +169,33 @@ public class Database {
         }
         return value;
     }
+    protected static String valueSDb(String go1, String searchValue) throws SQLException {
+        ResultSet result = sqlStatement.executeQuery(go1);
+        String value = null;
+        while (result.next()) {
+            if (result.isFirst()) {
+                value = (result.getString(searchValue));
+            }
+        }
+        return value;
+    }
+    public static void updateInfo() throws SQLException {
+        String searchValue = "room_name";
+        String go1 = "SELECT * FROM reservationBooked where userName='"+Customer.getCustomers().get(0).getUserName()+"';";
+        String updateString = valueSDb(go1, searchValue);
+        Customer.getCustomers().get(0).setRoomType(updateString);
+        searchValue = "room_nmbr";
+        int updateInt = valueDBLookUp(go1, searchValue);
+        Customer.getCustomers().get(0).setRoomNumber(updateInt);
 
+
+       // searchValue = "item";
+       // go1 = "SELECT * FROM customerBoughtCheckedIn where customer.userName='"+Customer.getCustomers().get(0).getUserName()+"'GROUP BY item;";
+        //updateString = valueSDb(go1, searchValue);
+        //System.out.println(updateString);
+        //Customer.getCustomers().get(0).setRoomType(updateString);
+       //Customer.getCustomers().get(0).setRoomType(update);
+    }
 
     protected static void checkBefore(int roomChoice, int days) throws SQLException {
         String searchValue = "room_nmbr";
@@ -184,7 +210,7 @@ public class Database {
                 System.out.println("\nWelcome to our hotel, you are now checked in! Your room-number is: " + roomChoice);
                 bookRoom(roomChoice, days);
                 searchValue = "price";
-                go1 = "SELECT * FROM allRooms WHERE room_nmbr = " + roomChoice + ";";
+                go1 = "SELECT * from checkPrice WHERE room_nmbr = " + roomChoice + ";";
                 int price = Database.valueDBLookUp(go1, searchValue);
                 int totalPrice = price * days;
                 Main.updateBill(totalPrice);
@@ -220,4 +246,24 @@ public class Database {
         int i = statement.executeUpdate();
         executeSql(i);
     }
+
+
+    protected static int check(String sql, int check) throws SQLException {
+        PreparedStatement statement = sqlStatement.getConnection().prepareStatement(sql);
+        statement.setInt(1,check);
+        ResultSet rs = statement.executeQuery();
+        int n = 0;
+        if (rs.next() ) {
+            n = rs.getInt(1);
+        }
+        else{
+            System.out.println("Tyvärr finns inte detta ID-nummer. Vänligen välj ett som finns!");
+        }
+        return n;
+    }
+
+
+
+
+
 }

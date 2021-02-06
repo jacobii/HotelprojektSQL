@@ -12,6 +12,9 @@ public class SaveToFile {
                     for (Customer cust : Customer.getCustomers()) {
                         out.writeObject(cust);
                     }
+                    for (Receptionist rec: Receptionist.getAccount()) {
+                        out.writeObject(rec);
+                    }
                     out.close();
                     fileOut.close();
                 }
@@ -37,12 +40,12 @@ public class SaveToFile {
         }
     }
 
-    public static void saveFile2() {
+    public static void saveAcc() {
         try {
-            try (FileOutputStream fileOut = new FileOutputStream("rec.ser")) {
+            try (FileOutputStream fileOut = new FileOutputStream("accounts.ser")) {
                 try (ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
-                    for (Receptionist rec : Receptionist.getReceptionists()) {
-                        out.writeObject(rec);
+                    for (Accounts acc : Accounts.account()) {
+                        out.writeObject(acc);
                     }
                     out.close();
                     fileOut.close();
@@ -53,14 +56,15 @@ public class SaveToFile {
         }
     }
 
-    public static void readFile2() {
-        Receptionist.getReceptionists().removeAll(Receptionist.getReceptionists());
-        Receptionist r = null;
+    public static void readAcc() {
+        //Receptionist.getReceptionists().removeAll(Receptionist.getReceptionists());
+        Accounts.account().removeAll(Accounts.account());
+        Accounts acc = null;
         try {
-            try (FileInputStream fileIn = new FileInputStream("rec.ser"); ObjectInput in = new ObjectInputStream(fileIn)) {
+            try (FileInputStream fileIn = new FileInputStream("accounts.ser"); ObjectInput in = new ObjectInputStream(fileIn)) {
                 while (true) {
-                    r = (Receptionist) in.readObject();
-                    Receptionist.getReceptionists().add(r);
+                    acc = (Accounts) in.readObject();
+                   Accounts.account().add(acc);
                 }
             }
         } catch (IOException i) {

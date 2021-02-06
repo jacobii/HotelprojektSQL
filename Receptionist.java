@@ -5,14 +5,13 @@ import java.util.ArrayList;
 
 public class Receptionist extends Accounts implements Serializable {
 
-    static ArrayList<Receptionist> receptionists = new ArrayList<>();
-
-    static ArrayList<Receptionist> getReceptionists() {
-        return receptionists;
+    static ArrayList<Receptionist> account = new ArrayList<>();
+    static ArrayList<Receptionist> getAccount() {
+        return account;
     }
 
-    public Receptionist(String firstName, String lastName, String userName, String password) {
-        super(firstName, lastName, userName, password);
+    public Receptionist(String firstName, String lastName, String userName, String password, int accountType) {
+        super(firstName, lastName, userName, password, accountType);
     }
 
     @Override

@@ -5,15 +5,22 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.Arrays.stream;
 
 
 public class Main {
     public static Scanner sc = new Scanner(System.in);
+    public static List<CurrentRoomBillItems> crBI = new ArrayList<>();
 
 
     public static void main(String[] args) {
+
         SaveToFile.readFile();
-        SaveToFile.readFile2();
+        SaveToFile.readAcc();
+        System.out.println(Customer.getCustomers());
+        System.out.println(Receptionist.getAccount());
         try {
             Database.dbConnect(Database.login());
         } catch (SQLException throwables) {
@@ -27,68 +34,40 @@ public class Main {
         }
     }
 
+
+    public static void seeRoombillItem() throws SQLException{
+        String gname = Customer.getCustomers().get(0).getUserName();
+        Integer sum =
+                crBI.stream()
+                        .filter(p -> p.getUserName()==(gname))
+                        .mapToInt(CurrentRoomBillItems::getbPrice)
+                        .sum();
+        System.out.println("Total roombill: " +sum);
+
+        System.out.println(crBI);
+
+    }
+
     protected static void custOrRep() throws SQLException {
         boolean exit = false;
         while (!exit) {
 
-            System.out.println("1. Log in as [Customer]");
-            System.out.println("2. Log in as [Receptionist]");
+            System.out.println("1. Log in as current user");
+            System.out.println("2. Create a new account");
             System.out.println("3. Exit");
             int choice = intInput();
 
             switch (choice) {
-                case 1 -> loginCust();
-                case 2 -> loginRec();
-                default -> exit = true;
-            }
-        }
-    }
-
-    public static void loginCust() throws SQLException {
-        boolean exit = false;
-        while (!exit) {
-            System.out.println(Customer.getCustomers());
-            System.out.println("Are you already a registered customer at this hotel?");
-            System.out.println("1. Log in as a current customer");
-            System.out.println("2. Create an account");
-            System.out.println("3. Go back to previous menu");
-            int choice = intInput();
-            switch (choice) {
-                case 1 -> existingCust();
+                case 1 -> loginAcc();
                 case 2 -> createCust();
+                case 3-> createRec();
                 default -> exit = true;
             }
         }
     }
 
-    public static void existingCust() throws SQLException {
-        boolean exit = false;
-        final boolean[] found = {false};
-        do {
-            Customer.getCustomers().sort(Comparator.comparing(Customer::getUserName));
-            Customer.getCustomers().forEach(System.out::println);
-            System.out.println("\n1. Login as an existing customer");
-            System.out.println("0. Back to previous menu");
-            int choice = intInput();
-            if (choice == 1) {
-                System.out.println("Type in your username: ");
-                String userName = sc.nextLine();
-                System.out.println("Type in your password: ");
-                String password = sc.nextLine();
-                Customer.getCustomers().forEach((customer) -> {
-                    if (userName.equalsIgnoreCase(customer.getUserName()) && password.equals(customer.getPassword())) {
-                        Collections.swap(Customer.getCustomers(), Customer.getCustomers().indexOf(customer), 0);
-                        found[0] = true;
-                        System.out.println("Found");
-                    }
-                });
-                if (!found[0]) {
-                    System.out.println("\nThe customer '" + userName + "' does not exsist or your password was wrong, please try again...\n");
-                }
-            }
-        } while (!found[0]);
-        custTable();
-    }
+
+
 
 
     public static void createCust() throws SQLException {
@@ -104,16 +83,16 @@ public class Main {
         String password = sc.nextLine();
         System.out.println("Your telephonenumber: ");
         String telephone = sc.nextLine();
-        Customer customer = new Customer(userName, firstName, lastName, telephone, password, 0, null);
+        Customer customer = new Customer(userName, firstName, lastName, telephone, password, 0, "",0,1);
         Database.createCust(table, userName, firstName, lastName, telephone, password);
         Customer.getCustomers().add(customer);
+        Accounts.account().add(customer);
         Collections.swap(Customer.getCustomers(), Customer.getCustomers().indexOf(customer), 0);
         chooseRoom();
     }
 
 
     protected static void custTable() throws SQLException {
-        SaveToFile.saveFile();
         boolean exit = false;
         while (!exit) {
             System.out.println("\n\nYou are logged in as: " + Customer.getCustomers().get(0).getUserName());
@@ -124,7 +103,9 @@ public class Main {
             System.out.println("4. Order food");
             System.out.println("5. Checkout");
             System.out.println("6. My bill");
-            System.out.println("7. Exit");
+            System.out.println("7. My information");
+            System.out.println("8. Exit");
+
             int choice = intInput();
 
             switch (choice) {
@@ -134,10 +115,14 @@ public class Main {
                 case 4 -> buyFood();
                 case 5 -> checkOut();
                 case 6 -> Database.customerInfo();
+                case 7 -> System.out.println(Customer.getCustomers().get(0));
+
 
 
                 default -> exit = true;
             }
+            Database.updateInfo();
+            SaveToFile.saveFile();
         }
     }
 
@@ -146,14 +131,16 @@ public class Main {
         System.out.println("================ Customer view Rooms ================");
         Database.availableRooms();
         System.out.println("\nChoose a room-number that is available.");
+
         int roomChoice = Main.intInput();
+
         System.out.println("Amount of days: ");
         int days = Main.intInput();
         Database.checkBefore(roomChoice, days);
+
         SaveToFile.saveFile();
 
     }
-
     public static void checkOut() throws SQLException {
         System.out.println("You have to pay: "+ Customer.getCustomers().get(0).getBill()+":-");
         System.out.println("1. Check out and pay");
@@ -162,20 +149,18 @@ public class Main {
             System.out.println("You are now checked-out!");
             Customer.getCustomers().get(0).setBill(0);
             Database.checkOut(Customer.getCustomers().get(0).getUserName());
+            String gname = Customer.getCustomers().get(0).getUserName();
+            crBI.removeIf(p ->p.getUserName().equals(gname));
             SaveToFile.saveFile();
         }
     }
-
     public static void seeRoomInfo() {
         System.out.println("1. Luxury Double Room");
         System.out.println("2. Luxury Single Room");
         System.out.println("3. Deluxe Double Room");
         System.out.println("4. Deluxe Single Room");
     }
-
     public static void buyFood() throws SQLException {
-        boolean exit = false;
-        while (!exit) {
             System.out.println("------ Room Service -----");
             Database.seeItems();
             System.out.println("\nType in the item_id to buy it.");
@@ -191,26 +176,20 @@ public class Main {
             updateBill(totalPrice);
             System.out.println(Customer.getCustomers());
             SaveToFile.saveFile();
-        }
+
+        String gname = Customer.getCustomers().get(0).getUserName();
+        if(item_choice == 1){
+            crBI.add(new CurrentRoomBillItems(gname,"Pasta ", amount, amount*150));
+        }else if (item_choice == 2){
+            crBI.add(new CurrentRoomBillItems(gname, "Noodles ", amount, amount*100));
+        }else if (item_choice == 3){
+            crBI.add(new CurrentRoomBillItems(gname,"Drink ", amount, amount*30));
+        }else if (item_choice == 4){
+            crBI.add(new CurrentRoomBillItems(gname,"Sandwich ", amount, amount*130));
     }
 
-
-    public static void loginRec() {
-        boolean exit = false;
-        while (!exit) {
-            System.out.println("1. Log in as a current customer");
-            System.out.println("2. Create an account");
-            System.out.println("3. Go back to previous menu");
-            int choice = intInput();
-            switch (choice) {
-                case 1 -> existingRec();
-                case 2 -> createRec();
-
-                default -> exit = true;
-            }
-        }
+        seeRoombillItem();
     }
-
     public static void createRec() {
         System.out.println("Your firstname: ");
         String firstName = sc.nextLine();
@@ -221,85 +200,61 @@ public class Main {
         System.out.println("Choose a password: ");
         String password = sc.nextLine();
 
-        Receptionist receptionist = new Receptionist(firstName, lastName, userName, password);
-        Receptionist.getReceptionists().add(receptionist);
-        Collections.swap(Receptionist.getReceptionists(), Receptionist.getReceptionists().indexOf(receptionist), 0);
-        SaveToFile.saveFile2();
+        Receptionist receptionist = new Receptionist(firstName, lastName, userName, password,0);
+        Receptionist.getAccount().add(receptionist);
+        Accounts.account().add(receptionist);
+        Collections.swap(Receptionist.getAccount(), Receptionist.getAccount().indexOf(receptionist), 0);
+        SaveToFile.saveAcc();
         receptionistTable();
     }
 
-    public static void existingRec() {
+    public static void loginAcc() {
         boolean exit = false;
         final boolean[] found = {false};
         do {
-            Receptionist.getReceptionists().sort(Comparator.comparing(Receptionist::getUserName));
-            Receptionist.getReceptionists().forEach(System.out::println);
-            System.out.println("\n1. Login as an existing rec");
-            System.out.println("0. Back to previous menu");
-            int choice = intInput();
-            if (choice == 1) {
+            System.out.println("Login with your account:");
+           // Receptionist.getReceptionists().sort(Comparator.comparing(Receptionist::getUserName));
+           // Receptionist.getReceptionists().forEach(System.out::println);
+
                 System.out.println("Type in your username: ");
                 String userName = sc.nextLine();
                 System.out.println("Type in your password: ");
                 String password = sc.nextLine();
-                Receptionist.getReceptionists().forEach((rec) -> {
-                    if (userName.equalsIgnoreCase(rec.getUserName()) && password.equals(rec.getPassword())) {
-                        Collections.swap(Receptionist.getReceptionists(), Receptionist.getReceptionists().indexOf(rec), 0);
-                        found[0] = true;
-                        receptionistTable();
-                    }
-                });
-                if (!found[0]) {
-                    System.out.println("\nThe receptionist with '" + userName + "' does not exsist or your password was wrong, please try again...\n");
+                if(user01(userName) == 0) {
+                    Receptionist.getAccount().forEach((rec) -> {
+                        if (userName.equalsIgnoreCase(rec.getUserName()) && password.equals(rec.getPassword())) {
+                            found[0] = true;
+                            Collections.swap(Receptionist.account(), Receptionist.getAccount().indexOf(rec),0);
+                            receptionistTable();
+                        }
+                    });
+                } else {
+                    Customer.getCustomers().forEach((cust) ->{
+                        if (userName.equalsIgnoreCase(cust.getUserName()) && password.equals(cust.getPassword())) {
+                            found[0] = true;
+                            Collections.swap(Customer.getCustomers(), Customer.getCustomers().indexOf(cust),0);
+                            try {
+                                custTable();
+                            } catch (SQLException throwables) {
+                                throwables.printStackTrace();
+                            }
+                        }
+                    });
                 }
-            }
-        } while (!found[0]);
-    }
-
-
-
-    public static void existingAcc() {
-        boolean exit = false;
-        final boolean[] found = {false};
-        do {
-            System.out.println("\n1. Login as an customer");
-            System.out.println("\n1. Login as an rec");
-
-
-            Receptionist.getReceptionists().sort(Comparator.comparing(Receptionist::getUserName));
-            Receptionist.getReceptionists().forEach(System.out::println);
-
-            System.out.println("0. Back to previous menu");
-            int choice = intInput();
-            if (choice == 1) {
-                System.out.println("Type in your username: ");
-                String userName = sc.nextLine();
-                System.out.println("Type in your password: ");
-                String password = sc.nextLine();
-                Accounts.accounts.forEach((acc) -> {
-                    if (userName.equalsIgnoreCase(acc.getUserName()) && password.equals(acc.getPassword())) {
-                        Collections.swap(Receptionist.getReceptionists(), Receptionist.getReceptionists().indexOf(acc), 0);
-                        found[0] = true;
-                        receptionistTable();
-                    }
-                });
                 if (!found[0]) {
-                    System.out.println("\nThe receptionist with '" + userName + "' does not exsist or your password was wrong, please try again...\n");
-                }
+                System.out.println("\nThe account with does not exsist or your password was wrong, please try again...\n");
             }
-        } while (!found[0]);
-    }
-
-
-
+        }while (!found[0]);
+        }
 
 
 
 
     protected static void receptionistTable() {
+        SaveToFile.saveAcc();
         boolean exit = false;
         while (!exit) {
-            System.out.println("You are logged in as: " + Receptionist.getReceptionists().get(0).getUserName());
+            System.out.println("You are logged in as: "+ Receptionist.getAccount().get(0).getUserName());
             System.out.println("================ Receptionist-view ================");
             System.out.println("1. Storing Customer Details");
             System.out.println("2. Searching Customer Details");
@@ -307,12 +262,13 @@ public class Main {
             System.out.println("4. Booking or upgrading room");
             System.out.println("5. Ordering Food for Particular Room");
             System.out.println("6. Check out for customer and showing bill");
-            System.out.println("7. Go back to Menu");
+            System.out.println("7. Create a receptions account");
+            System.out.println("8. Go back to Menu");
             int choice = intInput();
             switch (choice) {
                 //case 1 -> bookRoom();
                 case 2 -> searchCustomer();
-
+                case 7->  createRec();
                 default -> exit = true;
             }
         }
@@ -321,7 +277,7 @@ public class Main {
     public static void searchCustomer() {
         boolean exit = false;
         while (!exit) {
-            System.out.println("You are logged in as: " + Receptionist.getReceptionists().get(0).getUserName());
+            System.out.println("You are logged in as: " + Receptionist.getAccount().get(0).getUserName());
             System.out.println("================ Receptionist-search-view ================");
             System.out.println("1. Searching for customer username");
             System.out.println("2. Searching for customer with room");
@@ -345,11 +301,24 @@ public class Main {
                     String startsWith = sc.nextLine();
                     System.out.println("\nStarts with: " + startsWith);
                     Customer.getCustomers().forEach((s) -> {
-                        if (s.getRoomType().getTypeOfRoom().startsWith(startsWith))
+                        if (s.getRoomType().startsWith(startsWith))
                             System.out.println(s);
                     });
                     amount();
                 }
+                case 3 -> {
+                    System.out.println("The customer with the higest bill: ");
+                    //Customer.getCustomers().stream().sorted().
+                      //      Customer.getCustomers().stream().filter().collect(Collectors.toList()).forEach(System.out::println);
+                    //stream(names.stream().filter(n->n.startsWith("C")).toArray()).forEach(System.out::println);
+
+                    //Customer.getCustomers().stream().filter().
+                    //Customer.getCustomers().stream().filter(e->e.getBill())
+                      //      .forEach(System.out::println);
+                           // .map(Object::toString)
+
+                }
+
 
                 default -> exit = true;
             }
@@ -400,5 +369,17 @@ public class Main {
         } while (alreadyTaken);
         return input;
     }
-}
 
+
+
+    public static int user01(String userName) {
+            for (Accounts userType : Accounts.account) {
+                if (userName.equalsIgnoreCase(userType.getUserName())) {
+                    if(userType.getAccountType() == 0)
+                    return 0;
+                }
+    }
+        return 1;
+    }
+
+}

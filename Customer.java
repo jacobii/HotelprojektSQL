@@ -3,6 +3,7 @@ package com.company;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 
 public class Customer extends Accounts implements Serializable {
@@ -14,25 +15,34 @@ public class Customer extends Accounts implements Serializable {
 
     private String teleNumber;
     private int bill;
-    private Room roomType;
-    int roomNumber;
+    private String roomType;
+    private int roomNumber;
+    private String accountType;
 
-    public Customer(String userName, String firstName, String lastName, String teleNumber, String password, int bill, Room roomType) {
-        super(firstName, lastName, userName, password);
+    public Customer(String userName, String firstName, String lastName, String teleNumber, String password, int bill, String roomType, int roomNumber, int accountType) {
+        super(firstName, lastName, userName, password, accountType);
         this.teleNumber = teleNumber;
         this.bill = bill;
         this.roomType = roomType;
+        this.roomNumber = roomNumber;
     }
 
 
-    public Room getRoomType() {
+    public String getRoomType() {
         return roomType;
     }
 
-    public void setRoomType(Room roomType) {
+    public void setRoomType(String roomType) {
         this.roomType = roomType;
     }
 
+    public int getRoomNumber() {
+        return roomNumber;
+    }
+
+    public void setRoomNumber(int roomNumber) {
+        this.roomNumber = roomNumber;
+    }
 
     public String getTeleNumber() {
         return teleNumber;
@@ -59,6 +69,7 @@ public class Customer extends Accounts implements Serializable {
                 " | Username: " + getUserName() +
                 " | teleNumber: '" + teleNumber + '\'' +
                 " | bill: " + bill +
+                " | roomNumber: " + roomNumber +
                 " | roomType: " + roomType + " | ";
     }
 }
