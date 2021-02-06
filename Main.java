@@ -141,9 +141,6 @@ public class Main {
         }
     }
 
-    public static void checkOut() {
-
-    }
 
     public static void chooseRoom() throws SQLException {
         System.out.println("================ Customer view Rooms ================");
@@ -153,13 +150,20 @@ public class Main {
         System.out.println("Amount of days: ");
         int days = Main.intInput();
         Database.checkBefore(roomChoice, days);
-        String searchValue = "price";
-        String go1 = "SELECT * FROM allRooms WHERE room_nmbr = " + roomChoice + ";";
-        int price = Database.valueDBLookUp(go1, searchValue);
-        int totalPrice = price * days;
-        updateBill(totalPrice);
         SaveToFile.saveFile();
 
+    }
+
+    public static void checkOut() throws SQLException {
+        System.out.println("You have to pay: "+ Customer.getCustomers().get(0).getBill()+":-");
+        System.out.println("1. Check out and pay");
+        int choice = intInput();
+        if (choice == 1) {
+            System.out.println("You are now checked-out!");
+            Customer.getCustomers().get(0).setBill(0);
+            Database.checkOut(Customer.getCustomers().get(0).getUserName());
+            SaveToFile.saveFile();
+        }
     }
 
     public static void seeRoomInfo() {

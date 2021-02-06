@@ -76,7 +76,7 @@ public class Database {
 
     protected static void customerInfo() throws SQLException {
         {
-            String go = "SELECT * FROM customerInfo WHERE userName ='" + Customer.getCustomers().get(0).getUserName() + "';";
+            String go = "SELECT * FROM customerInfoCheckedIn WHERE userName ='" + Customer.getCustomers().get(0).getUserName() + "';";
             ListAll(go);
             System.out.println("\nYour current bill is: " + Customer.getCustomers().get(0).getBill() + ":-");
         }
@@ -90,12 +90,8 @@ public class Database {
     }
 
     protected static void ListAll(String go) throws SQLException {
-        // Utför query mot databas
-        // String go = "SELECT * FROM course;";
         ResultSet result = sqlStatement.executeQuery(go);
-        // hämtar antal kollimner
         int columnCount = result.getMetaData().getColumnCount();
-        // hämta alla kollumnamn
         String[] columnNames = new String[columnCount];
         for (int i = 0; i < columnCount; i++) {
             columnNames[i] = result.getMetaData().getColumnName(i + 1);
@@ -125,7 +121,6 @@ public class Database {
     private static String PadRight(String string) {
         int totalStringLength = 30;
         int charsToPadd = totalStringLength - string.length();
-        // incase the string is the same length or longer than our maximum lenght
         if (string.length() >= totalStringLength)
             return string;
         StringBuilder stringBuilder = new StringBuilder(string);
@@ -148,6 +143,13 @@ public class Database {
         int i = statement.executeUpdate();
     }
 
+    protected static void checkOut(String userName) throws SQLException {
+        PreparedStatement statement = sqlStatement.getConnection().prepareStatement("UPDATE reservation SET check_out = CURRENT_timestamp, booked = false WHERE userName=? AND booked = true;");
+        statement.setString(1, userName);
+        int i = statement.executeUpdate();
+        executeSql(i);
+    }
+
     protected static void executeSql(int i) {
         if (i == 1) {
             System.out.println("Successful!");
@@ -158,7 +160,6 @@ public class Database {
 
     protected static int valueDBLookUp(String go1, String searchValue) throws SQLException {
         ResultSet result = sqlStatement.executeQuery(go1);
-
         int value = 0;
         while (result.next()) {
             if (result.isFirst()) {
@@ -172,7 +173,7 @@ public class Database {
 
     protected static void checkBefore(int roomChoice, int days) throws SQLException {
         String searchValue = "room_nmbr";
-        String go2 = "SELECT * FROM allRooms WHERE userName ='" + Customer.getCustomers().get(0).getUserName() + "';"; // ifal denna kund redan lånat denna bok.
+        String go2 = "SELECT * FROM checkIn WHERE userName ='"+Customer.getCustomers().get(0).getUserName()+"'";
         ResultSet result = sqlStatement.executeQuery(go2);
         if (!result.isBeforeFirst()) {
             String go1 = "SELECT * FROM allRooms WHERE room_nmbr = " + roomChoice + " AND booked IS NOT true;";
@@ -182,8 +183,13 @@ public class Database {
             } else {
                 System.out.println("\nWelcome to our hotel, you are now checked in! Your room-number is: " + roomChoice);
                 bookRoom(roomChoice, days);
+                searchValue = "price";
+                go1 = "SELECT * FROM allRooms WHERE room_nmbr = " + roomChoice + ";";
+                int price = Database.valueDBLookUp(go1, searchValue);
+                int totalPrice = price * days;
+                Main.updateBill(totalPrice);
             }
-        } else {
+        }else {
             System.out.println("\nYou already have a room. If you want to get another room, you have to check out.");// data exist
         }
     }
