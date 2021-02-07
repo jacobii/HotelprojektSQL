@@ -120,13 +120,35 @@ LEFT join roomnumber ON roomnumber.room_type_id = room.room_type_id
 LEFT join reservation ON reservation.room_nmbr = roomnumber.room_nmbr
 LEFT join customer ON customer.userName = reservation.userName;
 
+
+-- drop view reservationBooked;
 Create VIEW reservationBooked AS
-SELECT room.room_name, roomNumber.room_nmbr, reservation.check_in, reservation.userName, reservation.booked
+SELECT room.room_name, roomNumber.room_nmbr, reservation.check_in, reservation.userName, reservation.booked, reservation.amount_days, room.price
 FROM room
 LEFT join roomnumber ON roomnumber.room_type_id = room.room_type_id
 LEFT join reservation ON reservation.room_nmbr = roomnumber.room_nmbr
 LEFT join customer ON customer.userName = reservation.userName
 WHERE reservation.booked = true;
+
+
+SELECT SUM(reservation.amount_days*room.price) from reservationBooked WHERE userName='haa';
+
+
+-- drop view checkPriceForCheckOut;
+Create VIEW checkPriceForCheckOut AS
+SELECT reservation.userName, reservation.booked, roomnumber.room_nmbr, SUM(reservation.amount_days*room.price) as sum
+FROM room
+LEFT join roomnumber ON roomnumber.room_type_id = room.room_type_id
+LEFT join reservation ON reservation.room_nmbr = roomnumber.room_nmbr
+LEFT join customer ON customer.userName = reservation.userName
+WHERE reservation.booked = 1
+
+SELECT * from checkPriceForCheckOut WHERE room_nmbr=3;
+
+
+
+
+SELECT * from reservationBooked where userName = 'name1';
 
 SELECT * FROM reservationBooked where userName="ba";
 
@@ -194,7 +216,7 @@ WHERE booked IS true;
 -- drop view customerBoughtCheckedIn;
 Create VIEW customerBoughtCheckedIn AS
 -- room.room_name, room.price,
-SELECT customer.userName, items.item, SUM(bought.amount*items.item_price*)
+SELECT customer.userName, items.item, SUM(bought.amount*items.item_price)
 FROM room
 LEFT join roomnumber ON roomnumber.room_type_id = room.room_type_id
 LEFT join reservation ON reservation.room_nmbr = roomnumber.room_nmbr
@@ -210,5 +232,3 @@ SELECT * from customerBoughtCheckedIn WHERE userName = 'he' GROUP BY item;
 -- GROUP BY userName;
 -- WHERE booked IS NOT true;
 -- ORDER BY booked;
-
-
