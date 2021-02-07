@@ -12,7 +12,41 @@ public class SaveToFile {
                     for (Customer cust : Customer.getCustomers()) {
                         out.writeObject(cust);
                     }
-                    for (Receptionist rec: Receptionist.getAccount()) {
+                    out.close();
+                    fileOut.close();
+                }
+            }
+        } catch (IOException e) {
+            System.out.println(e);
+        }
+        saveRec();
+    }
+
+    public static void readFile() {
+        Customer.customers.removeAll(Customer.getCustomers());
+        Accounts.account().removeAll(Accounts.account());
+        Receptionist.getAccount().removeAll(Receptionist.getAccount());
+        Customer c = null;
+        try {
+            try (FileInputStream fileIn = new FileInputStream("customers.ser"); ObjectInput in = new ObjectInputStream(fileIn)) {
+                while (true) {
+                    c = (Customer) in.readObject();
+                    Customer.customers.add(c);
+                    Accounts.account().add(c);
+                }
+            }
+        } catch (IOException i) {
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(Customer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        readRec();
+    }
+
+    public static void saveRec() {
+        try {
+            try (FileOutputStream fileOut = new FileOutputStream("rec.ser")) {
+                try (ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
+                    for (Receptionist rec : Receptionist.getAccount()) {
                         out.writeObject(rec);
                     }
                     out.close();
@@ -23,48 +57,14 @@ public class SaveToFile {
             System.out.println(e);
         }
     }
-
-    public static void readFile() {
-        Customer.customers.removeAll(Customer.getCustomers());
-        Customer c = null;
+    public static void readRec() {
+        Receptionist rec = null;
         try {
-            try (FileInputStream fileIn = new FileInputStream("customers.ser"); ObjectInput in = new ObjectInputStream(fileIn)) {
+            try (FileInputStream fileIn = new FileInputStream("rec.ser"); ObjectInput in = new ObjectInputStream(fileIn)) {
                 while (true) {
-                    c = (Customer) in.readObject();
-                    Customer.customers.add(c);
-                }
-            }
-        } catch (IOException i) {
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(Customer.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    public static void saveAcc() {
-        try {
-            try (FileOutputStream fileOut = new FileOutputStream("accounts.ser")) {
-                try (ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
-                    for (Accounts acc : Accounts.account()) {
-                        out.writeObject(acc);
-                    }
-                    out.close();
-                    fileOut.close();
-                }
-            }
-        } catch (IOException e) {
-            System.out.println(e);
-        }
-    }
-
-    public static void readAcc() {
-        //Receptionist.getReceptionists().removeAll(Receptionist.getReceptionists());
-        Accounts.account().removeAll(Accounts.account());
-        Accounts acc = null;
-        try {
-            try (FileInputStream fileIn = new FileInputStream("accounts.ser"); ObjectInput in = new ObjectInputStream(fileIn)) {
-                while (true) {
-                    acc = (Accounts) in.readObject();
-                   Accounts.account().add(acc);
+                    rec = (Receptionist) in.readObject();
+                    Receptionist.getAccount().add(rec);
+                    Accounts.account().add(rec);
                 }
             }
         } catch (IOException i) {
