@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.Scanner;
 
 public class Database {
@@ -235,14 +236,14 @@ public class Database {
         executeSql(i);
     }
 
-    protected static void buyFood(int item_id, int amount) throws SQLException {
+    protected static void buyFood(int item_id, int amount, String userName) throws SQLException {
         //table ="customer";
         //firstName = firstName.substring(0, Math.min(firstName.length(), 25));
         // lastName = lastName.substring(0, Math.min(lastName.length(), 25));
         PreparedStatement statement = sqlStatement.getConnection().prepareStatement("INSERT INTO bought (item_id, amount,userName) VALUES(?,?,?);");
         statement.setInt(1, item_id);
         statement.setInt(2, amount);
-        statement.setString(3, Customer.getCustomers().get(0).getUserName());
+        statement.setString(3, userName);
 
         int i = statement.executeUpdate();
         executeSql(i);

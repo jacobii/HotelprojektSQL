@@ -1,10 +1,9 @@
 package com.company;
 
-import javax.xml.crypto.Data;
-import java.io.IOException;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 
@@ -16,8 +15,7 @@ public class Main {
 
     public static void main(String[] args) {
 
-        System.out.println(20210208-20210207);
-            SaveToFile.readFile();
+        SaveToFile.readFile();
         System.out.println(Customer.getCustomers());
         System.out.println(Receptionist.getAccount());
         System.out.println(Accounts.account());
@@ -34,29 +32,31 @@ public class Main {
         }
     }
 
-
-    public static void seeRoombillItem() throws SQLException{
-        String gname = Customer.getCustomers().get(0).getUserName();
-        Integer sum =
-                crBI.stream()
-                        .filter(p -> p.getUserName()==(gname))
-                        .mapToInt(CurrentRoomBillItems::getbPrice)
-                        .sum();
-        System.out.println("Total roombill: " +sum);
-
-        System.out.println(crBI);
-
+    public static int goDate() {
+        LocalDate localDate = LocalDate.now();
+        String pattern = "yyyyMMdd";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
+        return  Integer.parseInt(localDate.format(formatter));
     }
 
+    public static void seeRoombillItem(){
+        String gname = Customer.getCustomers().get(0).getUserName();
+        crBI.stream()
+                .filter(s-> s.getUserName().equals(gname))
+                .forEach(System.out::println);
+        Integer sum = crBI.stream()
+                        .filter(p -> p.getUserName().equals(gname))
+                        .mapToInt(CurrentRoomBillItems::getbPrice)
+                        .sum();
+        System.out.println("Total bill for the food you bought: " +sum);
+    }
     protected static void custOrRep() throws SQLException {
         boolean exit = false;
         while (!exit) {
-
             System.out.println("1. Log in as current user");
             System.out.println("2. Create a new account");
             System.out.println("3. Exit");
             int choice = intInput();
-
             switch (choice) {
                 case 1 -> loginAcc();
                 case 2 -> createCust();
@@ -65,11 +65,6 @@ public class Main {
             }
         }
     }
-
-
-
-
-
     public static void createCust() throws SQLException {
         String table = "customer";
         System.out.println("Before you can check in, we just need some details from you..");
@@ -83,22 +78,19 @@ public class Main {
         String password = sc.nextLine();
         System.out.println("Your telephonenumber: ");
         String telephone = sc.nextLine();
-        Customer customer = new Customer(userName, firstName, lastName, telephone, password, 0, "",0,1);
+        Customer customer = new Customer(userName, firstName, lastName, telephone, password, 0 ,"",0,1,0);
         Database.createCust(table, userName, firstName, lastName, telephone, password);
         Customer.getCustomers().add(customer);
         Accounts.account().add(customer);
         Collections.swap(Customer.getCustomers(), Customer.getCustomers().indexOf(customer), 0);
         chooseRoom(userName);
+        custTable();
     }
-
-
-
-
     protected static void custTable() throws SQLException {
         String userName =Customer.getCustomers().get(0).getUserName();
         boolean exit = false;
         while (!exit) {
-            System.out.println("\n\nYou are logged in as: " + userName);
+            System.out.println("\n\nYou are logged in as customer: " + userName);
             System.out.println("================ Customer view ================");
             System.out.println("1. Display room details");
             System.out.println("2. Display room availability");
@@ -108,29 +100,31 @@ public class Main {
             System.out.println("6. My bill");
             System.out.println("7. My information");
             System.out.println("8. Exit");
-
             int choice = intInput();
-
             switch (choice) {
-                //case 3 -> chooseRoom();
+                case 1 -> seeRooms();
                 case 2 -> Database.availableRooms();
                 case 3 -> chooseRoom(userName);
-                case 4 -> buyFood();
+                case 4 -> {
+                    try {
+                        buyFood(userName);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
                 case 5 -> checkOut();
                 case 6 -> Database.customerInfo();
                 case 7 -> System.out.println(Customer.getCustomers().get(0));
-
-
-
                 default -> exit = true;
             }
             Database.updateInfo();
-
-                SaveToFile.saveFile();
+            SaveToFile.saveFile();
         }
     }
 
+public static void seeRooms() {
 
+}
     public static void chooseRoom(String userName) throws SQLException {
         System.out.println("================ Customer view Rooms ================");
         Database.availableRooms();
@@ -145,6 +139,7 @@ public class Main {
         System.out.println("Amount of days: ");
         int days = Main.intInput();
         Database.checkBefore(userName, roomChoice, days);
+        Customer.getCustomers().get(0).setCheckIn(goDate());
         SaveToFile.saveFile();
         }
 
@@ -155,12 +150,36 @@ public class Main {
         System.out.println("1. Check out and pay");
         int choice = intInput();
         if (choice == 1) {
+            checkAmountOfDays(userName);
+            System.out.println("You payed: "+Customer.getCustomers().get(0).getBill());
             System.out.println("You are now checked-out!");
             Database.checkOut(userName);
             checkOutSet(userName);
         }
     }
-    public static void buyFood() throws SQLException {
+    public static void checkAmountOfDays(String userName)throws SQLException {
+        String go1 = "SELECT * from reservationBooked WHERE userName='"+userName+"';";
+        String check = "price";
+        int price = Database.valueDBLookUp(go1,check);
+        check = "amount_days";
+        int days = Database.valueDBLookUp(go1,check);
+        int totalP = price*days;
+        System.out.println("You had plan to stay "+days+" days and therefore the cost for the room is: "+price*days+":-");
+        Customer.getCustomers().forEach((s) -> {
+            if (s.getUserName().equalsIgnoreCase(userName))
+                System.out.println(s);
+            int checkIn = s.getCheckIn(); int checkOut = goDate();
+            int total = checkIn-checkOut;
+            if(total == 0) {
+                total++;
+                }
+                int realPrice =price*total;
+                s.setBill(s.getBill()-totalP+realPrice);
+        });
+    }
+    public static void buyFood(String userName) throws SQLException, InterruptedException {
+            System.out.println("------ Room Service -----");
+
             System.out.println("------ Room Service -----");
             Database.seeItems();
             System.out.println("\nType in the item_id to buy it.");
@@ -168,34 +187,31 @@ public class Main {
             String sql = "SELECT item_id from items Where item_id = ?;";
             int check = Database.check(sql, item_choice);
             if (check == 0) {
-                System.out.println("This food does not exsist!");
+                System.out.println("This food does not exist at the hotel!");
             }else {
             System.out.println("How many do you want to buy? ");
             int amount = intInput();
-            Database.buyFood(item_choice, amount);
-            String searchValue = "item_price";
 
+            Database.buyFood(item_choice, amount, userName);
+            System.out.println("\nThank you for your order! We will get it for you as soon as possible "+ userName+"....\n");
+            Thread.sleep(1500);
+            String searchValue = "item_price";
             String go1 = "SELECT * FROM items WHERE item_id = " + item_choice + ";";
             int price = Database.valueDBLookUp(go1, searchValue); // get priceInfo
             int totalPrice = price * amount;
+                if(item_choice == 1){
+                    crBI.add(new CurrentRoomBillItems(userName,"Pasta ", amount, amount*150));
+                }else if (item_choice == 2){
+                    crBI.add(new CurrentRoomBillItems(userName, "Noodles ", amount, amount*100));
+                }else if (item_choice == 3){
+                    crBI.add(new CurrentRoomBillItems(userName,"Drink ", amount, amount*30));
+                }else if (item_choice == 4){
+                    crBI.add(new CurrentRoomBillItems(userName,"Sandwich ", amount, amount*130));
+                }
+            seeRoombillItem();
             updateBill(totalPrice);
-            System.out.println(Customer.getCustomers());
             SaveToFile.saveFile();
-
-
-        String userName = Customer.getCustomers().get(0).getUserName();
-        if(item_choice == 1){
-            crBI.add(new CurrentRoomBillItems(userName,"Pasta ", amount, amount*150));
-        }else if (item_choice == 2){
-            crBI.add(new CurrentRoomBillItems(userName, "Noodles ", amount, amount*100));
-        }else if (item_choice == 3){
-            crBI.add(new CurrentRoomBillItems(userName,"Drink ", amount, amount*30));
-        }else if (item_choice == 4){
-            crBI.add(new CurrentRoomBillItems(userName,"Sandwich ", amount, amount*130));
-    }
         }
-
-        seeRoombillItem();
     }
     public static void createRec() throws SQLException {
         System.out.println("Your firstname: ");
@@ -214,7 +230,6 @@ public class Main {
         SaveToFile.saveFile();
         receptionistTable();
     }
-
     public static void loginAcc() {
         boolean exit = false;
         final boolean[] found = {false};
@@ -258,9 +273,6 @@ public class Main {
         }while (!found[0]);
         }
 
-
-
-
     protected static void receptionistTable() throws SQLException {
         SaveToFile.saveFile();
         boolean exit = false;
@@ -271,18 +283,28 @@ public class Main {
             System.out.println("2. Searching Customer Details");
             System.out.println("3. Upgrade and delete details");
             System.out.println("4. Booking or upgrading room");
-            System.out.println("5. Ordering Food for Particular Room");
+            System.out.println("5. Ordering Food for Particular customer");
             System.out.println("6. Check out for customer and showing bill");
             System.out.println("7. Create a receptions account");
             System.out.println("8. Go back to Menu");
             int choice = intInput();
             switch (choice) {
                 //case 1 -> bookRoom();
+                case 1-> System.out.println(Customer.getCustomers());
                 case 2 -> searchCustomer();
                 case 4 -> {
                     System.out.println("Type in the username that you want to choose a room for: ");
                     String userName = sc.nextLine();
                     chooseRoom(userName);
+                }
+                case 5 -> {
+                    System.out.println("Type in the username that you want to choose a room for: ");
+                    String userName = sc.nextLine();
+                    try {
+                        buyFood(userName);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
                 case 6-> checkOutCust();
                 case 7->  createRec();
@@ -290,7 +312,17 @@ public class Main {
             }
         }
     }
-
+    protected static void deleteCust() {
+            int check = 0;
+            deleteBefore(check);
+            PreparedStatement statement;
+            statement = sqlStatement.getConnection().prepareStatement("DELETE FROM "+table+" WHERE "+nameId+"=?;");
+            statement.setInt(1,id);
+            int i = statement.executeUpdate();
+            executeSql(i);
+            check = 1;
+            deleteBefore(check);
+    }
     protected static void checkOutCust() {
         System.out.println("Check out for customer");
         System.out.println(Customer.getCustomers());
@@ -329,7 +361,6 @@ public class Main {
         crBI.removeIf(p ->p.getUserName().equals(userName));
         SaveToFile.saveFile();
     }
-
     public static void searchCustomer() {
         boolean exit = false;
         while (!exit) {
@@ -350,7 +381,6 @@ public class Main {
                             System.out.println(s);
                     });
                     amount();
-
                 }
                 case 2 -> {
                     System.out.println("Search for a customer by which room: ");
@@ -364,17 +394,11 @@ public class Main {
                 }
                 case 3 -> {
                     System.out.println("The customer with the higest bill: ");
-
-
                 }
-
-
                 default -> exit = true;
             }
         }
-
     }
-
     public static void amount() {
         System.out.println("Amount found: " + Customer.getCustomers().stream().count());
     }
@@ -385,7 +409,6 @@ public class Main {
         Customer.getCustomers().get(0).setBill(currentBill + totalPrice);
         System.out.println("Your current bill is: " + Customer.getCustomers().get(0).getBill() + ":-");
     }
-
     public static int intInput() {
         int intInput;
         do {
@@ -399,11 +422,6 @@ public class Main {
         // System.out.printf("You have entered a positive number %d.\n" , intInput);
         return intInput;
     }
-
-
-
-
-
     public static String inputUserName() {
         String input;
         boolean alreadyTaken;
@@ -422,8 +440,6 @@ public class Main {
         } while (alreadyTaken);
         return input;
     }
-
-
     public static int user01(String userName) {
             for (Accounts userType : Accounts.account) {
                 if (userName.equalsIgnoreCase(userType.getUserName())) {
@@ -433,5 +449,4 @@ public class Main {
     }
         return 1;
     }
-
 }

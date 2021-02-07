@@ -44,7 +44,7 @@ public class CurrentRoomBillItems {
                     "\nCustomer: " + userName +
                     "\nItem: " + iTem +
                     "\nQuantity: " + iUnits +
-                    "\nAmount: " + bPrice +
+                    "\nAmount: " + bPrice +":-"+
                     "\n*********************************************\n";
 
         }
