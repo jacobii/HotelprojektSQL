@@ -44,7 +44,7 @@ public class Main {
         crBI.stream()
                 .filter(s-> s.getUserName().equals(gname))
                 .forEach(System.out::println);
-        Integer sum = crBI.stream()
+        int sum = crBI.stream()
                         .filter(p -> p.getUserName().equals(gname))
                         .mapToInt(CurrentRoomBillItems::getbPrice)
                         .sum();
@@ -179,8 +179,6 @@ public static void seeRooms() {
     }
     public static void buyFood(String userName) throws SQLException, InterruptedException {
             System.out.println("------ Room Service -----");
-
-            System.out.println("------ Room Service -----");
             Database.seeItems();
             System.out.println("\nType in the item_id to buy it.");
             int item_choice = intInput();
@@ -289,17 +287,16 @@ public static void seeRooms() {
             System.out.println("8. Go back to Menu");
             int choice = intInput();
             switch (choice) {
-                //case 1 -> bookRoom();
-                case 1-> System.out.println(Customer.getCustomers());
+                case 1 -> customerDetails();
                 case 2 -> searchCustomer();
                 case 4 -> {
                     System.out.println("Type in the username that you want to choose a room for: ");
-                    String userName = sc.nextLine();
+                    String userName = inputUserExist();
                     chooseRoom(userName);
                 }
                 case 5 -> {
                     System.out.println("Type in the username that you want to choose a room for: ");
-                    String userName = sc.nextLine();
+                    String userName = inputUserExist();
                     try {
                         buyFood(userName);
                     } catch (InterruptedException e) {
@@ -312,22 +309,39 @@ public static void seeRooms() {
             }
         }
     }
-    protected static void deleteCust() {
-            int check = 0;
-            deleteBefore(check);
-            PreparedStatement statement;
-            statement = sqlStatement.getConnection().prepareStatement("DELETE FROM "+table+" WHERE "+nameId+"=?;");
-            statement.setInt(1,id);
-            int i = statement.executeUpdate();
-            executeSql(i);
-            check = 1;
-            deleteBefore(check);
+    public static void retrivePassForCust() {
+        System.out.println("Type in the username of the customer:");
+        String userName = inputUserExist();
+        Customer.getCustomers().forEach((s) -> {
+            if (s.getUserName().equalsIgnoreCase(userName)){
+                System.out.println(s.getUserName()+" password is: "+ s.getPassword());
+            }
+
+
+        });
+    }
+    public static void customerDetails(){
+        boolean exit = false;
+        while (!exit) {
+        System.out.println("1. See all customers");
+        System.out.println("2. Retrive password for user");
+        System.out.println("3. Change password for user");
+        System.out.println("4. ");
+            int choice = intInput();
+            switch (choice) {
+                case 1 -> System.out.println(Customer.getCustomers());
+                case 2->retrivePassForCust();
+
+                default -> exit = true;
+            }
+
+    }
     }
     protected static void checkOutCust() {
         System.out.println("Check out for customer");
         System.out.println(Customer.getCustomers());
         System.out.println("Type in the username of the customer that is going to check out: ");
-        String userName = sc.nextLine();
+        String userName = inputUserExist();
                 Customer.getCustomers().forEach((s) -> {
             if (s.getUserName().equalsIgnoreCase(userName))
                 System.out.println("The customer has to pay: "+s.getBill());
@@ -336,9 +350,10 @@ public static void seeRooms() {
         int choice = intInput();
         if (choice == 1) {
             try {
+                checkAmountOfDays(userName);
                 Database.checkOut(userName);
                 checkOutSet(userName);
-                System.out.println(userName + "is now checked-out!");
+                System.out.println(userName + " is now checked-out!");
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
@@ -394,6 +409,8 @@ public static void seeRooms() {
                 }
                 case 3 -> {
                     System.out.println("The customer with the higest bill: ");
+
+                    //Customer.getCustomers().stream().
                 }
                 default -> exit = true;
             }
@@ -449,4 +466,27 @@ public static void seeRooms() {
     }
         return 1;
     }
+    public static String inputUserExist() {
+        String input;
+        boolean exist;
+        do {
+            exist = false;
+            input = sc.nextLine();
+            for (Customer userName : Customer.getCustomers()) {
+                if (!input.equalsIgnoreCase(userName.getUserName())) {
+                    exist = true;
+                    break;
+                }
+            }
+                if (exist) {
+                    System.out.println("Sorry, this username does not exist, please choose another one..");
+                }
+        } while (exist);
+        return input;
+    }
+
+
+
+
+
 }
